@@ -38,14 +38,14 @@ def bfs(graph, start_node, visited:set):
         # print(next, end=" ")
         path = path + next + "->"
         # if a goal state is needed
-        # if next == 'D': return path
+        if next == 'A': return path
 
         for neighbor in graph.get(next, []):
             if neighbor not in visited:
                 queue.append(neighbor)
                 visited.add(neighbor)
                 
-    return path
+    return None
 
 if __name__ == "__main__":
     graph = {
@@ -58,5 +58,5 @@ if __name__ == "__main__":
     }
     visited = set()
     print("Traversed path: ", )
-    path = bfs(graph, 'A', visited)
+    path = bfs(graph, 'D', visited)
     print(path)
