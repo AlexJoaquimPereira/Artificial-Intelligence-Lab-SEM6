@@ -37,9 +37,17 @@ def heuristic_row_position(state, goal_state):
     Checks if the row is in the correct configuration  
     If yes then -1 for every block in the row  
     If not then +1 for every block in the row  
-    Lower is better as priority queue used
     '''
     penalty = 0
+    state = np.array(state).reshape((3, 3))
+    goal_state = np.array(goal_state).reshape((3, 3))
+
+    for row in range(3):
+        if all(state[row, :] == goal_state[row, :]):
+            penalty -= 3  # Correct row
+        else:
+            penalty += np.sum(state[row, :] != goal_state[row, :])
+
     return penalty
 
 def heuristic_position(state, goal_state):
@@ -61,9 +69,9 @@ def heuristic_position(state, goal_state):
                 penalty += 1
     return penalty
 
-def heuristic_euclidan(state, goal_state):
+def heuristic_euclidean(state, goal_state):
     '''
-    Euclidan distance: ((x1- x2)^2 + (y1- y2)^2)^2  
+    Euclidean distance
     Return the distance between the numbers
     '''
     state = np.array(state).reshape((3, 3))
@@ -79,9 +87,9 @@ def heuristic_euclidan(state, goal_state):
 
     return distance
 
-def heuristic(state, goal_state):
+def heuristic_manhattan(state, goal_state):
     '''
-    Manhattan distance: |(x1- x2) + (y1- y2)|  
+    Manhattan distance
     Return the distance between the numbers
     '''
     state = np.array(state).reshape((3, 3))
@@ -97,29 +105,28 @@ def heuristic(state, goal_state):
 
     return distance
 
-def eightPuzzle(start_state):
-    '''
-    Eight Puzzle Problem using BestFS algorithm
-    Uses a vector of size 9 to figure out  
-    Blank space is indicated by 0   
-    Final Solution: [1, 2, 3, 4, 5, 6, 7, 8, 0]  
-    '''
+def choose_heuristic(choice):
+    if choice == 1: return heuristic_row_position
+    if choice == 2: return heuristic_position
+    if choice == 3: return heuristic_euclidean
+    if choice == 4: return heuristic_manhattan
+    return None
+
+def eightPuzzle(start_state, heuristic_func):
     goal_state = tuple([1, 2, 3, 4, 5, 6, 7, 8, 0])  
     start_state = tuple(start_state.flatten())  
-
     move_directions = {'Up': -3, 'Down': 3, 'Left': -1, 'Right': 1}
-    
+
     pri_queue = PriorityQueue()
-    pri_queue.put((heuristic(start_state, goal_state), start_state, None, None))  # (h(n), state, parent, move)
+    pri_queue.put((heuristic_func(start_state, goal_state), start_state, None, None))
 
     parent_map = {}
     visited = set()
 
+    steps = 0
     while not pri_queue.empty():
         h_value, current_state, parent, move = pri_queue.get()
-        
-        # print(f"Processing state:\n{np.array(current_state).reshape(3, 3)}\n") # debug
-
+        steps += 1
         if current_state in visited: continue
 
         visited.add(current_state)
@@ -127,13 +134,13 @@ def eightPuzzle(start_state):
             parent_map[current_state] = (parent, move)
 
         if current_state == goal_state:
-            return reconstruct_path(parent_map, current_state)
+            return reconstruct_path(parent_map, current_state), steps
 
         for new_state, move in moves(current_state, move_directions):
             if new_state not in visited:
-                pri_queue.put((heuristic(new_state, goal_state), new_state, current_state, move))
+                pri_queue.put((heuristic_func(new_state, goal_state), new_state, current_state, move))
 
-    return None
+    return None, steps
 
 if __name__ == "__main__":
     while True:
@@ -141,11 +148,20 @@ if __name__ == "__main__":
         start_state = np.array([int(x) for x in input().split()])
         if np.size(start_state) == 9:
             break
-    
-    path = eightPuzzle(start_state)
-    
+
+    print("\nSelect the Heuristic Function:")
+    print("1. Row Position ")
+    print("2. Position Matching ")
+    print("3. Euclidean Distance ")
+    print("4. Manhattan Distance ")
+
+    choice = int(input("Enter your choice (1-4): "))
+    heuristic_func = choose_heuristic(choice)
+
+    path, steps = eightPuzzle(start_state, heuristic_func)
+
     if path:
-        print("\nSolution Path:")
+        print(f"\nSolution found in {steps} steps:")
         for step in path:
             print(step, "\n")
     else:
